@@ -59,7 +59,7 @@ export const APPS = [
   {
     id: "inventory",
     label: "Inventory",
-    icon: `<img style="height: 1em;" src="InventoryICON.png" alt="Inventory" class="nav-icon-img" />`,
+    icon: `<img style="height: 1em;" src="inventoryICON.png" alt="Inventory" class="nav-icon-img" />`,
     href: "inventory.html",
     section: "core",
     description: "Manage your product inventory",
