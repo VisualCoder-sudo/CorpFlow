@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CorpFlow — Tax Estimator</title>
+  <link rel="icon" href="NEWCorpFlowLogo.png">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    /* ── Layout ── */
+    .tax-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--s-6);
+      align-items: start;
+    }
+    @media (max-width: 860px) { .tax-grid { grid-template-columns: 1fr; } }
+
+    /* ── Section card ── */
+    .section-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: var(--s-6);
+      margin-bottom: var(--s-5);
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--s-5);
+      display: flex;
+      align-items: center;
+      gap: var(--s-2);
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Form rows ── */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--s-4);
+      margin-bottom: var(--s-4);
+    }
+    @media (max-width: 520px) { .field-row { grid-template-columns: 1fr; } }
+    .field { display: flex; flex-direction: column; gap: var(--s-2); }
+    .field-full { margin-bottom: var(--s-4); }
+
+    /* ── Input prefix/suffix wrapper ── */
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-wrap .prefix,
+    .input-wrap .suffix {
+      position: absolute;
+      font-size: 13px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .input-wrap .prefix { left: 12px; }
+    .input-wrap .suffix { right: 12px; }
+    .input-wrap .input.has-prefix  { padding-left: 26px; }
+    .input-wrap .input.has-suffix  { padding-right: 32px; }
+
+    /* ── Results panel ── */
+    .results-card {
+      background: var(--bg-2);
+      border: 1px solid var(--green-border);
+      border-radius: var(--r-lg);
+      padding: var(--s-6);
+      position: sticky;
+      top: var(--s-6);
+    }
+    .results-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: var(--s-5);
+      display: flex;
+      align-items: center;
+      gap: var(--s-2);
+    }
+
+    /* ── Big tax number ── */
+    .tax-hero {
+      text-align: center;
+      padding: var(--s-5) 0 var(--s-6);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: var(--s-5);
+    }
+    .tax-hero-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--s-2);
+    }
+    .tax-hero-amount {
+      font-family: var(--font-display);
+      font-size: 44px;
+      font-weight: 800;
+      color: var(--red);
+      line-height: 1;
+      letter-spacing: -0.02em;
+      transition: all 0.2s ease;
+    }
+    .tax-hero-eff {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: var(--s-2);
+    }
+    .tax-hero-eff span { color: var(--amber); font-weight: 600; }
+
+    /* ── Breakdown rows ── */
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-label { color: var(--text-muted); display: flex; align-items: center; gap: var(--s-2); }
+    .breakdown-value { font-weight: 600; color: var(--text); font-family: var(--font-mono); font-size: 13px; }
+    .breakdown-value.red   { color: var(--red); }
+    .breakdown-value.green { color: var(--green); }
+    .breakdown-value.amber { color: var(--amber); }
+
+    /* ── Bracket table ── */
+    .bracket-table { width: 100%; border-collapse: collapse; margin-top: var(--s-4); font-size: 12px; }
+    .bracket-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .bracket-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+    .bracket-table tr:last-child td { border-bottom: none; }
+    .bracket-table tr.active-bracket td { color: var(--text); background: var(--bg-3); }
+    .bracket-table tr.active-bracket td:first-child { border-left: 2px solid var(--green); }
+    .bracket-rate { font-weight: 700; color: var(--amber); }
+
+    /* ── Quarterly card ── */
+    .quarterly-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--s-3);
+      margin-top: var(--s-4);
+    }
+    @media (max-width: 600px) { .quarterly-grid { grid-template-columns: repeat(2, 1fr); } }
+    .q-card {
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: var(--s-3) var(--s-4);
+      text-align: center;
+    }
+    .q-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+    .q-date  { font-size: 10px; color: var(--text-muted); margin-bottom: 6px; }
+    .q-amount { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--amber); }
+
+    /* ── Disclaimer ── */
+    .disclaimer {
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-top: var(--s-5);
+      padding: var(--s-3) var(--s-4);
+      background: var(--bg-3);
+      border-radius: var(--r-md);
+      border-left: 2px solid var(--border);
+    }
+
+    /* ── Toggle pills ── */
+    .pill-group {
+      display: flex;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 3px;
+      gap: 2px;
+      width: fit-content;
+      margin-bottom: var(--s-5);
+    }
+    .pill-btn {
+      background: none;
+      border: none;
+      border-radius: 7px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .pill-btn.active { background: var(--bg-4); color: var(--text); border: 1px solid var(--border); }
+
+    /* ── Province badges ── */
+    .province-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: var(--s-2);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title">Tax Estimator</div>
+        <div class="page-subtitle">Estimate federal &amp; provincial income tax, CPP, EI, and quarterly payments.</div>
+      </div>
+
+      <!-- Filing type toggle -->
+      <div class="pill-group" id="filing-toggle">
+        <button class="pill-btn active" data-filing="sole">Sole Proprietor / Self-Employed</button>
+        <button class="pill-btn" data-filing="corp">Corporation</button>
+      </div>
+
+      <div class="tax-grid">
+
+        <!-- ── LEFT: Inputs ── -->
+        <div>
+
+          <!-- Income -->
+          <div class="section-card">
+            <div class="section-title">Income</div>
+
+            <div class="field-row">
+              <div class="field">
+                <label class="form-label">Gross Revenue / Income</label>
+                <div class="input-wrap">
+                  <span class="prefix">$</span>
+                  <input class="input has-prefix" type="number" id="gross-income" placeholder="0" min="0">
+                </div>
+              </div>
+              <div class="field">
+                <label class="form-label">Tax Year</label>
+                <select class="input" id="tax-year">
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label class="form-label">Province / Territory</label>
+                <select class="input" id="province">
+                  <option value="AB">Alberta</option>
+                  <option value="BC">British Columbia</option>
+                  <option value="MB">Manitoba</option>
+                  <option value="NB">New Brunswick</option>
+                  <option value="NL">Newfoundland &amp; Labrador</option>
+                  <option value="NS">Nova Scotia</option>
+                  <option value="NT">Northwest Territories</option>
+                  <option value="NU">Nunavut</option>
+                  <option value="ON" selected>Ontario</option>
+                  <option value="PE">Prince Edward Island</option>
+                  <option value="QC">Quebec</option>
+                  <option value="SK">Saskatchewan</option>
+                  <option value="YT">Yukon</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="form-label">Filing Status</label>
+                <select class="input" id="filing-status">
+                  <option value="single">Single</option>
+                  <option value="married">Married / Common-Law</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deductions -->
+          <div class="section-card">
+            <div class="section-title">Deductions &amp; Credits</div>
+
+            <div class="field-row">
+              <div class="field">
+                <label class="form-label">Business Expenses</label>
+                <div class="input-wrap">
+                  <span class="prefix">$</span>
+                  <input class="input has-prefix" type="number" id="biz-expenses" placeholder="0" min="0">
+                </div>
+              </div>
+              <div class="field">
+                <label class="form-label">RRSP Contributions</label>
+                <div class="input-wrap">
+                  <span class="prefix">$</span>
+                  <input class="input has-prefix" type="number" id="rrsp" placeholder="0" min="0">
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label class="form-label">Other Deductions</label>
+                <div class="input-wrap">
+                  <span class="prefix">$</span>
+                  <input class="input has-prefix" type="number" id="other-deductions" placeholder="0" min="0">
+                </div>
+              </div>
+              <div class="field">
+                <label class="form-label">Other Tax Credits</label>
+                <div class="input-wrap">
+                  <span class="prefix">$</span>
+                  <input class="input has-prefix" type="number" id="tax-credits" placeholder="0" min="0">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CPP / EI (sole prop only) -->
+          <div class="section-card" id="cpp-section">
+            <div class="section-title">CPP &amp; EI (Self-Employed)</div>
+
+            <div class="field-row">
+              <div class="field">
+                <label class="form-label">CPP Rate (both portions)</label>
+                <div class="input-wrap">
+                  <input class="input has-suffix" type="number" id="cpp-rate" value="11.9" step="0.1" min="0" max="30">
+                  <span class="suffix">%</span>
+                </div>
+              </div>
+              <div class="field">
+                <label class="form-label">EI Premium Rate</label>
+                <div class="input-wrap">
+                  <input class="input has-suffix" type="number" id="ei-rate" value="1.66" step="0.01" min="0" max="10">
+                  <span class="suffix">%</span>
+                </div>
+              </div>
+            </div>
+            <p class="province-note">CPP maximum insurable earnings: $73,200 · EI maximum: $63,200 (2025)</p>
+          </div>
+
+          <!-- HST / GST -->
+          <div class="section-card">
+            <div class="section-title">HST / GST Collected</div>
+            <div class="field-row">
+              <div class="field">
+                <label class="form-label">HST / GST Collected</label>
+                <div class="input-wrap">
+                  <span class="prefix">$</span>
+                  <input class="input has-prefix" type="number" id="hst-collected" placeholder="0" min="0">
+                </div>
+              </div>
+              <div class="field">
+                <label class="form-label">HST / GST Paid (ITCs)</label>
+                <div class="input-wrap">
+                  <span class="prefix">$</span>
+                  <input class="input has-prefix" type="number" id="hst-itc" placeholder="0" min="0">
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /left -->
+
+        <!-- ── RIGHT: Results ── -->
+        <div>
+          <div class="results-card">
+            <div class="results-title">Estimated Tax Summary</div>
+
+            <!-- Big number -->
+            <div class="tax-hero">
+              <div class="tax-hero-label">Total Tax Owing (Est.)</div>
+              <div class="tax-hero-amount" id="r-total">$0</div>
+              <div class="tax-hero-eff">Effective rate: <span id="r-eff-rate">0.0%</span></div>
+            </div>
+
+            <!-- Breakdown -->
+            <div class="breakdown-row">
+              <span class="breakdown-label">Gross Income</span>
+              <span class="breakdown-value green" id="r-gross">$0</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Total Deductions</span>
+              <span class="breakdown-value" id="r-deductions">−$0</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Taxable Income</span>
+              <span class="breakdown-value" id="r-taxable">$0</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Federal Income Tax</span>
+              <span class="breakdown-value red" id="r-fed">$0</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Provincial Tax</span>
+              <span class="breakdown-value red" id="r-prov">$0</span>
+            </div>
+            <div class="breakdown-row" id="row-cpp">
+              <span class="breakdown-label">CPP (self-employed)</span>
+              <span class="breakdown-value red" id="r-cpp">$0</span>
+            </div>
+            <div class="breakdown-row" id="row-ei">
+              <span class="breakdown-label">EI Premiums</span>
+              <span class="breakdown-value red" id="r-ei">$0</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Tax Credits Applied</span>
+              <span class="breakdown-value green" id="r-credits">−$0</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">HST / GST Remittance</span>
+              <span class="breakdown-value amber" id="r-hst">$0</span>
+            </div>
+            <div class="breakdown-row" style="border-top:1px solid var(--green-border);padding-top:12px;margin-top:4px">
+              <span class="breakdown-label" style="color:var(--text);font-weight:600">Net Take-Home (Est.)</span>
+              <span class="breakdown-value green" style="font-size:15px" id="r-takehome">$0</span>
+            </div>
+          </div>
+
+          <!-- Quarterly payments -->
+          <div class="section-card" style="margin-top:var(--s-5)">
+            <div class="section-title">Quarterly Instalments</div>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:0">If owing &gt; $3,000 CRA requires quarterly payments.</p>
+            <div class="quarterly-grid">
+              <div class="q-card"><div class="q-label">Q1</div><div class="q-date">Mar 15</div><div class="q-amount" id="q1">$0</div></div>
+              <div class="q-card"><div class="q-label">Q2</div><div class="q-date">Jun 15</div><div class="q-amount" id="q2">$0</div></div>
+              <div class="q-card"><div class="q-label">Q3</div><div class="q-date">Sep 15</div><div class="q-amount" id="q3">$0</div></div>
+              <div class="q-card"><div class="q-label">Q4</div><div class="q-date">Dec 15</div><div class="q-amount" id="q4">$0</div></div>
+            </div>
+          </div>
+
+          <!-- Federal brackets -->
+          <div class="section-card">
+            <div class="section-title">2025 Federal Brackets</div>
+            <table class="bracket-table" id="bracket-table">
+              <thead>
+                <tr><th>Income Range</th><th>Rate</th><th>Tax on Bracket</th></tr>
+              </thead>
+              <tbody id="bracket-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="disclaimer">
+            This estimator provides a rough estimate only and does not constitute tax advice. Numbers are based on 2025 federal brackets and approximate provincial rates. Consult a CPA or tax professional before filing.
+          </div>
+        </div><!-- /right -->
+
+      </div><!-- /tax-grid -->
+    </main>
+  </div>
+
+  <script type="module">
+    import { renderSidebar } from './app-registry.js';
+    renderSidebar('tax-estimator');
+  </script>
+
+  <script>
+    /* ─────────────────────────────────────────────
+       TAX DATA — 2025 Canada
+    ───────────────────────────────────────────── */
+
+    const FED_BRACKETS_2025 = [
+      { min: 0,       max: 57375,   rate: 0.15 },
+      { min: 57375,   max: 114750,  rate: 0.205 },
+      { min: 114750,  max: 158519,  rate: 0.26 },
+      { min: 158519,  max: 220000,  rate: 0.29 },
+      { min: 220000,  max: Infinity,rate: 0.33 },
+    ];
+
+    // Approximate 2025 provincial top-bracket flat rates for simplicity
+    // (progressive calc used where data available)
+    const PROV_RATES = {
+      AB: 0.10, BC: 0.205, MB: 0.174, NB: 0.195, NL: 0.218,
+      NS: 0.21, NT: 0.1405, NU: 0.1195, ON: 0.1316, PE: 0.1875,
+      QC: 0.2575, SK: 0.145, YT: 0.15,
+    };
+
+    // Provincial basic personal amounts (approx)
+    const PROV_BPA = {
+      AB: 21003, BC: 11981, MB: 15780, NB: 12458, NL: 10818,
+      NS: 8481,  NT: 16593, NU: 17925, ON: 11865, PE: 12000,
+      QC: 17183, SK: 17661, YT: 15705,
+    };
+
+    const FED_BPA = 16129; // 2025 federal basic personal amount
+    const CPP_MAX_EARNINGS = 73200;
+    const EI_MAX_EARNINGS  = 63200;
+
+    /* ─────────────────────────────────────────────
+       HELPERS
+    ───────────────────────────────────────────── */
+    function fmt(n) {
+      return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(n);
+    }
+
+    function calcBracketTax(income, brackets) {
+      let tax = 0;
+      for (const b of brackets) {
+        if (income <= b.min) break;
+        const taxable = Math.min(income, b.max) - b.min;
+        tax += taxable * b.rate;
+      }
+      return tax;
+    }
+
+    function calcFedTax(taxableIncome) {
+      const afterBPA = Math.max(0, taxableIncome - FED_BPA);
+      return calcBracketTax(afterBPA, FED_BRACKETS_2025);
+    }
+
+    function calcProvTax(taxableIncome, province) {
+      const bpa = PROV_BPA[province] || 12000;
+      const rate = PROV_RATES[province] || 0.12;
+      // Simple flat effective rate applied after BPA deduction
+      return Math.max(0, taxableIncome - bpa) * rate;
+    }
+
+    /* ─────────────────────────────────────────────
+       MAIN CALCULATE
+    ───────────────────────────────────────────── */
+    function calculate() {
+      const gross       = parseFloat(document.getElementById('gross-income').value)     || 0;
+      const bizExp      = parseFloat(document.getElementById('biz-expenses').value)     || 0;
+      const rrsp        = parseFloat(document.getElementById('rrsp').value)             || 0;
+      const otherDed    = parseFloat(document.getElementById('other-deductions').value) || 0;
+      const taxCredits  = parseFloat(document.getElementById('tax-credits').value)      || 0;
+      const hstCollect  = parseFloat(document.getElementById('hst-collected').value)    || 0;
+      const hstITC      = parseFloat(document.getElementById('hst-itc').value)          || 0;
+      const cppRate     = parseFloat(document.getElementById('cpp-rate').value)  / 100  || 0;
+      const eiRate      = parseFloat(document.getElementById('ei-rate').value)   / 100  || 0;
+      const province    = document.getElementById('province').value;
+      const isSole      = document.getElementById('filing-toggle')
+                            .querySelector('.pill-btn.active').dataset.filing === 'sole';
+
+      // Taxable income
+      const totalDeductions = bizExp + rrsp + otherDed;
+      const taxableIncome   = Math.max(0, gross - totalDeductions);
+
+      // Federal tax
+      const fedTax  = calcFedTax(taxableIncome);
+
+      // Provincial tax
+      const provTax = calcProvTax(taxableIncome, province);
+
+      // CPP (self-employed pays both portions on net self-employment income)
+      const cppBase = isSole ? Math.max(0, Math.min(gross - bizExp, CPP_MAX_EARNINGS) - 3500) : 0;
+      const cppOwed = cppBase * cppRate;
+
+      // EI (optional for self-employed but shown)
+      const eiBase  = isSole ? Math.min(gross - bizExp, EI_MAX_EARNINGS) : 0;
+      const eiOwed  = eiBase * eiRate;
+
+      // HST remittance
+      const hstOwed = Math.max(0, hstCollect - hstITC);
+
+      // Total income tax
+      const incomeTax = Math.max(0, fedTax + provTax - taxCredits);
+      const totalTax  = incomeTax + cppOwed + eiOwed;
+
+      // Effective rate on gross
+      const effRate = gross > 0 ? (incomeTax / gross) * 100 : 0;
+
+      // Net take-home
+      const takeHome = gross - totalTax - hstOwed;
+
+      /* ── Update DOM ── */
+      document.getElementById('r-gross').textContent       = fmt(gross);
+      document.getElementById('r-deductions').textContent  = '−' + fmt(totalDeductions);
+      document.getElementById('r-taxable').textContent     = fmt(taxableIncome);
+      document.getElementById('r-fed').textContent         = fmt(fedTax);
+      document.getElementById('r-prov').textContent        = fmt(provTax);
+      document.getElementById('r-cpp').textContent         = fmt(cppOwed);
+      document.getElementById('r-ei').textContent          = fmt(eiOwed);
+      document.getElementById('r-credits').textContent     = '−' + fmt(taxCredits);
+      document.getElementById('r-hst').textContent         = fmt(hstOwed);
+      document.getElementById('r-total').textContent       = fmt(totalTax);
+      document.getElementById('r-eff-rate').textContent    = effRate.toFixed(1) + '%';
+      document.getElementById('r-takehome').textContent    = fmt(Math.max(0, takeHome));
+
+      // Show/hide CPP/EI rows
+      document.getElementById('row-cpp').style.display = isSole ? '' : 'none';
+      document.getElementById('row-ei').style.display  = isSole ? '' : 'none';
+
+      // Quarterly instalments (only if owing > $3,000)
+      const qAmt = totalTax > 3000 ? Math.round(totalTax / 4) : 0;
+      ['q1','q2','q3','q4'].forEach(id => document.getElementById(id).textContent = fmt(qAmt));
+
+      // Bracket table
+      renderBrackets(taxableIncome);
+    }
+
+    function renderBrackets(taxableIncome) {
+      const rows = FED_BRACKETS_2025.map((b, i) => {
+        const isActive = taxableIncome > b.min;
+        const income   = isActive ? Math.min(taxableIncome, b.max === Infinity ? taxableIncome : b.max) - b.min : 0;
+        const taxOnBracket = income * b.rate;
+        const maxLabel = b.max === Infinity ? '∞' : '$' + b.max.toLocaleString('en-CA');
+        return `<tr class="${isActive ? 'active-bracket' : ''}">
+          <td>$${b.min.toLocaleString('en-CA')} – ${maxLabel}</td>
+          <td class="bracket-rate">${(b.rate * 100).toFixed(1)}%</td>
+          <td>${isActive && income > 0 ? fmt(taxOnBracket) : '—'}</td>
+        </tr>`;
+      });
+      document.getElementById('bracket-tbody').innerHTML = rows.join('');
+    }
+
+    /* ─────────────────────────────────────────────
+       EVENT LISTENERS
+    ───────────────────────────────────────────── */
+
+    // All inputs recalculate live
+    document.querySelectorAll('input[type="number"], select').forEach(el => {
+      el.addEventListener('input', calculate);
+    });
+
+    // Filing type toggle
+    document.getElementById('filing-toggle').addEventListener('click', e => {
+      const btn = e.target.closest('.pill-btn');
+      if (!btn) return;
+      document.querySelectorAll('#filing-toggle .pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const isSole = btn.dataset.filing === 'sole';
+      document.getElementById('cpp-section').style.display = isSole ? '' : 'none';
+      calculate();
+    });
+
+    // Initial render
+    calculate();
+  </script>
+</body>
+</html>

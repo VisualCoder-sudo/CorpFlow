@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CorpFlow — Settings</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .settings-grid { display:grid;grid-template-columns:200px 1fr;gap:var(--s-8); }
+    @media(max-width:640px){.settings-grid{grid-template-columns:1fr;}}
+    .settings-nav { display:flex;flex-direction:column;gap:var(--s-1); }
+    .settings-nav-btn { text-align:left;background:none;border:none;padding:8px 12px;border-radius:var(--r-md);color:var(--text-muted);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s; }
+    .settings-nav-btn:hover { background:var(--bg-3);color:var(--text); }
+    .settings-nav-btn.active { background:var(--green-glow);color:var(--green); }
+    .settings-panel { display:none; }
+    .settings-panel.active { display:block; }
+    .settings-section { margin-bottom:var(--s-8); }
+    .settings-section-title { font-family:var(--font-display);font-weight:700;font-size:16px;margin-bottom:var(--s-4); }
+    .settings-row { display:flex;justify-content:space-between;align-items:center;padding:var(--s-4) 0;border-bottom:1px solid var(--border); }
+    .settings-row:last-child { border-bottom:none; }
+    .settings-row-label { font-size:14px;font-weight:500; }
+    .settings-row-desc { font-size:12px;color:var(--text-muted);margin-top:2px; }
+    .form-group { display:flex;flex-direction:column;gap:var(--s-2);margin-bottom:var(--s-4); }
+    .toggle { position:relative;width:40px;height:22px; }
+    .toggle input { opacity:0;width:0;height:0; }
+    .toggle-slider { position:absolute;inset:0;background:var(--bg-4);border-radius:99px;cursor:pointer;transition:0.2s; }
+    .toggle input:checked + .toggle-slider { background:var(--green); }
+    .toggle-slider::before { content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.2s; }
+    .toggle input:checked + .toggle-slider::before { transform:translateX(18px); }
+
+    .integration-card { background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s-5);display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-3); }
+    .integration-icon { font-size:28px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--bg-3);border-radius:var(--r-md); }
+    .integration-info { flex:1; }
+    .integration-name { font-weight:600;font-size:14px; }
+    .integration-desc { font-size:12px;color:var(--text-muted);margin-top:2px; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+        <div class="page-subtitle">Manage your account and workspace.</div>
+      </div>
+
+      <div class="settings-grid">
+        <!-- Settings nav -->
+        <div class="settings-nav">
+          <button class="settings-nav-btn active" data-panel="profile">Profile</button>
+          <button class="settings-nav-btn" data-panel="integrations">Integrations</button>
+          <button class="settings-nav-btn" data-panel="danger">Account Config</button>
+        </div>
+
+        <!-- Panels -->
+        <div>
+          <!-- Profile -->
+          <div class="settings-panel active" id="panel-profile">
+            <div class="settings-section">
+              <div class="settings-section-title">Profile</div>
+              <div class="form-group">
+                <label class="form-label">Display name</label>
+                <input class="input" id="s-name" placeholder="Your name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="input" id="s-email" disabled style="opacity:0.5;cursor:not-allowed">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Company name</label>
+                <input class="input" id="s-company" placeholder="Company Name">
+              </div>
+              <button class="btn btn-primary" id="save-profile-btn">Save changes</button>
+            </div>
+          </div>
+
+          <!-- Integrations -->
+          <div class="settings-panel" id="panel-integrations">
+            <div class="settings-section">
+              <div class="settings-section-title">Available Integrations</div>
+              <p style="color:var(--text-muted);font-size:13px;margin-bottom:var(--s-5)">
+                Connect APIs and Services to CorpFlow
+              </p>
+              <div id="integrations-list"></div>
+            </div>
+          </div>
+
+          <!-- Danger -->
+          <div class="settings-panel" id="panel-danger">
+            <div class="settings-section">
+              <div class="settings-section-title" style="color:var(--red)">Account</div>
+              <div class="card" style="border-color:rgba(255,92,92,0.2)">
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-row-label">Sign out</div>
+                    <div class="settings-row-desc">Log out of your account on this device.</div>
+                  </div>
+                  <button class="btn btn-ghost" id="signout-btn">Sign out</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { requireAuth, getUserProfile, updateUserProfile, logout } from './api.js';
+    import { renderSidebar } from './app-registry.js';
+    import { INTEGRATIONS } from './app-registry.js';
+    import { toast, setLoading } from './ui.js';
+
+    const user = await requireAuth();
+    renderSidebar('settings');
+
+    // Load profile
+    const profile = await getUserProfile(user.uid);
+    document.getElementById('s-name').value    = profile?.displayName || user.displayName || '';
+    document.getElementById('s-email').value   = user.email || '';
+    document.getElementById('s-company').value = profile?.company || '';
+
+    // Settings nav
+    document.querySelectorAll('.settings-nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.settings-nav-btn').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.settings-panel').forEach(p=>p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`panel-${btn.dataset.panel}`).classList.add('active');
+      });
+    });
+
+    // Save profile
+    document.getElementById('save-profile-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('save-profile-btn');
+      setLoading(btn, true);
+      await updateUserProfile(user.uid, {
+        displayName: document.getElementById('s-name').value.trim(),
+        company:     document.getElementById('s-company').value.trim(),
+      });
+      toast('Profile saved', 'success');
+      setLoading(btn, false, 'Save changes');
+    });
+
+    // Sign out
+    document.getElementById('signout-btn').addEventListener('click', async () => {
+      await logout(); window.location.href = 'auth.html';
+    });
+
+    // Integrations
+    const il = document.getElementById('integrations-list');
+    if (INTEGRATIONS.length) {
+      il.innerHTML = INTEGRATIONS.map(i => `
+        <div class="integration-card">
+          <div class="integration-icon">${i.icon}</div>
+          <div class="integration-info">
+            <div class="integration-name">${i.label}</div>
+            <div class="integration-desc">${i.desc}</div>
+          </div>
+          <span class="badge ${i.enabled?'badge-green':'badge-amber'}">${i.enabled?'Connected':'Coming soon'}</span>
+        </div>`).join('');
+    } else {
+      il.innerHTML = `<div style="color:var(--text-muted);font-size:13px">No integrations configured yet, Still in Alpha.</div>`;
+    }
+  </script>
+</body>
+</html>

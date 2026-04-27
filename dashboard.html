@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CorpFlow - Dashboard</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--s-4);
+      margin-bottom: var(--s-8);
+    }
+    @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+    .kpi-icon {
+      font-size: 22px;
+      margin-bottom: var(--s-3);
+      display: block;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--s-6);
+    }
+    @media (max-width: 760px) { .panels { grid-template-columns: 1fr; } }
+
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: var(--s-4);
+    }
+    .panel-title {
+      font-family: var(--font-display);
+      font-weight: 700; font-size: 15px;
+    }
+
+    .activity-item {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-3) 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    .quick-actions {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3);
+      margin-bottom: var(--s-8);
+    }
+    .qa-btn {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-4) var(--s-5);
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      cursor: pointer; text-decoration: none;
+      color: var(--text);
+      font-size: 13px; font-weight: 500;
+      transition: all 0.18s;
+    }
+    .qa-btn:hover { border-color: var(--green-border); background: var(--bg-3); color: var(--green); }
+    .qa-icon { font-size: 20px; }
+
+    .greeting {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 700;
+      margin-bottom: var(--s-1);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="greeting" id="greeting">Good morning</div>
+        <div class="page-subtitle" id="greeting-sub">Here's what's happening today.</div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="stat-card"><span class="kpi-icon">◈</span><div class="stat-label">Revenue</div><div class="stat-value-revenue" id="kpi-revenue">-</div></div>
+        <div class="stat-card"><span class="kpi-icon">◻</span><div class="stat-label">Expenses</div><div class="stat-value-expenses" id="kpi-expenses">-</div></div>
+        <div class="stat-card"><span class="kpi-icon">◎</span><div class="stat-label">Active Projects</div><div class="stat-value" id="kpi-projects">-</div></div>
+        <div class="stat-card"><span class="kpi-icon">⬡</span><div class="stat-label">Open Tasks</div><div class="stat-value" id="kpi-tasks">-</div></div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div style="margin-bottom:var(--s-3)">
+        <span class="tag">Quick actions</span>
+      </div>
+      <div class="quick-actions">
+        <a class="qa-btn" href="businessmanagement.html?new=client"><span class="qa-icon">+</span> New Client</a>
+        <a class="qa-btn" href="businessmanagement.html?new=project"><span class="qa-icon">+</span> New Project</a>
+        <a class="qa-btn" href="businessmanagement.html?new=task"><span class="qa-icon">+</span> New Task</a>
+        <a class="qa-btn" href="invoices.html?new=invoice"><span class="qa-icon">+</span> New Invoice</a>
+      </div>
+
+      <!-- Panels -->
+      <div class="panels">
+        <!-- Recent Tasks -->
+        <div class="card">
+          <div class="panel-header">
+            <span class="panel-title">Recent Tasks</span>
+            <a href="businessmanagement.html" class="btn btn-ghost" style="padding:6px 12px;font-size:12px">View all →</a>
+          </div>
+          <div id="tasks-list"><div class="spinner"></div></div>
+        </div>
+
+        <!-- Recent Clients -->
+        <div class="card">
+          <div class="panel-header">
+            <span class="panel-title">Recent Clients</span>
+            <a href="businessmanagement.html" class="btn btn-ghost" style="padding:6px 12px;font-size:12px">View all →</a>
+          </div>
+          <div id="clients-list"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="dashboardJS.js"></script>
+</body>
+</html>

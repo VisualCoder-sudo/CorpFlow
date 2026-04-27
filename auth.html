@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CorpFlow - Sign in</title>
+  <link rel="stylesheet" href="shared.css">
+  <link rel="icon" href="NEWCorpFlowLogo.png">
+  <style>
+    body {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(184,245,116,0.06) 0%, transparent 70%), var(--bg);
+    }
+
+    .auth-wrap {
+      width: 90%; max-width: 400px;
+    }
+
+    .auth-logo-Text {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 32px; font-weight: 800;
+      color: var(--green);
+      text-align: center;
+      margin-bottom: var(--s-2);
+      letter-spacing: -0.03em;
+    }
+
+    .auth-logo {
+      display: flex; align-items: center; justify-content: center;
+      gap: var(--s-2); margin-bottom: var(--s-4);
+    }
+
+    .auth-tagline {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: var(--s-8);
+    }
+
+    .auth-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: var(--s-8);
+    }
+
+    .auth-tabs {
+      display: flex; gap: 0;
+      background: var(--bg-3);
+      border-radius: var(--r-md);
+      padding: 3px;
+      margin-bottom: var(--s-6);
+    }
+
+    .auth-tab {
+      flex: 1; padding: 8px;
+      text-align: center;
+      border-radius: calc(var(--r-md) - 2px);
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+      border: none; background: none;
+    }
+
+    .auth-tab.active {
+      background: var(--bg-2);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    .form-group {
+      margin-bottom: var(--s-4);
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px; font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: var(--s-2);
+      letter-spacing: 0.04em;
+    }
+
+    .form-panel { display: none; }
+    .form-panel.active { display: block; }
+
+    .forgot-link {
+      font-size: 12px; color: var(--text-muted);
+      text-decoration: none; display: block;
+      text-align: right; margin-top: var(--s-1);
+    }
+    .forgot-link:hover { color: var(--green); }
+
+    .divider-text {
+      text-align: center; font-size: 11px;
+      color: var(--text-dim); margin: var(--s-4) 0;
+      position: relative;
+    }
+    .divider-text::before, .divider-text::after {
+      content: ''; position: absolute; top: 50%;
+      width: 40%; height: 1px; background: var(--border);
+    }
+    .divider-text::before { left: 0; }
+    .divider-text::after  { right: 0; }
+
+    .error-msg {
+      color: var(--red); font-size: 12px;
+      margin-top: var(--s-3); display: none;
+    }
+  </style>
+</head>
+<body>
+
+<a href="index.html" style="position: absolute; left: 2%; top: 2%; border-radius: 50%; width: 30px; height: 30px; background-color: rgba(90, 255, 126, 0.719); font-weight: bold; text-align: center; text-decoration: none; color: white;">←</a>
+
+  <div class="auth-wrap">
+    <div class="auth-logo"> <h1 class="auth-logo-Text">CorpFlow</h1> <img style="height: 3em;" src="NEWCorpFlowLogo.png" alt=""></div> 
+    <div class="auth-tagline">Your business, organized.</div>
+
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Log in</button>
+        <button class="auth-tab" data-tab="signup">Sign up</button>
+      </div>
+
+      <!-- Login Panel -->
+      <div class="form-panel active" id="panel-login">
+        <button class="btn btn-secondary" id="google-btn" style="width:100%; margin-bottom: var(--s-4); background-color: var(--bg-3); color: white;"> <img style="height: 1em;" src="GoogleICON.png" alt="">
+          Continue with Google
+        </button>
+        <button class="btn btn-secondary" id="github-btn" style="width:100%; margin-bottom: var(--s-4); background-color: var(--bg-3); color: white;"> <img style="height: 1em;" src="GitHubICON.png" alt="">
+          Continue with GitHub
+        </button>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="input" type="email" id="login-email" placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+          <a class="forgot-link" href="#" id="forgot-link">Forgot password?</a>
+        </div>
+        <div class="error-msg" id="login-error"></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--s-2)"
+                id="login-btn">Log in</button>
+      </div>
+
+      <!-- Signup Panel -->
+      <div class="form-panel" id="panel-signup">
+        <div class="divider-text">OR</div>
+        <button class="btn btn-secondary" id="google-btn" style="width:100%; margin-bottom: var(--s-4); background-color: var(--bg-3); color: white;"> <img style="height: 1em;" src="GoogleICON.png" alt="">
+          Continue with Google
+        </button>
+        <button class="btn btn-secondary" id="github-btn" style="width:100%; margin-bottom: var(--s-4); background-color: var(--bg-3); color: white;"> <img style="height: 1em;" src="GitHubICON.png" alt="">
+          Continue with GitHub
+        </button>
+        <div class="form-group">
+          <label class="form-label">Full name</label>
+          <input class="input" type="text" id="signup-name" placeholder="Full Name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="input" type="email" id="signup-email" placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="input" type="password" id="signup-password" placeholder="Min. 8 characters" autocomplete="new-password">
+        </div>
+        <div class="error-msg" id="signup-error"></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--s-2)"
+                id="signup-btn">Create account</button>
+      </div>
+    </div>
+
+    <p style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:var(--s-5)">
+      By continuing you agree to CorpFlow's Terms &amp; Privacy Policy.
+    </p>
+  </div>
+
+  <script type="module">
+    import { login, register, resetPassword, onAuth, loginWithGoogle, loginWithGitHub } from './api.js';
+    import { toast } from './ui.js';
+
+    // Redirect if already logged in
+    onAuth(user => { if (user) window.location.href = 'dashboard.html'; });
+
+    // Tab switching
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`panel-${target}`).classList.add('active');
+      });
+    });
+
+    // Login
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('login-error');
+      const email = document.getElementById('login-email').value.trim();
+      const pass  = document.getElementById('login-password').value;
+      errEl.style.display = 'none';
+
+      if (!email || !pass) { errEl.textContent = 'Please fill all fields.'; errEl.style.display = 'block'; return; }
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+
+      try {
+        await login(email, pass);
+        window.location.href = 'dashboard.html';
+      } catch (e) {
+        errEl.textContent = friendlyError(e.code);
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Log in';
+      }
+    });
+
+    document.getElementById('google-btn').addEventListener('click', async () => {
+  try {
+    await loginWithGoogle();
+    window.location.href = 'dashboard.html';
+  } catch (e) {
+    console.error(e);
+    toast('Google sign-in failed.', 'error');
+  }
+});
+
+    // Signup
+    document.getElementById('signup-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('signup-btn');
+      const errEl = document.getElementById('signup-error');
+      const name  = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const pass  = document.getElementById('signup-password').value;
+      errEl.style.display = 'none';
+
+      if (!name || !email || !pass) { errEl.textContent = 'Please fill all fields.'; errEl.style.display = 'block'; return; }
+      if (pass.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+
+      try {
+        await register(email, pass, name);
+        window.location.href = 'dashboard.html';
+      } catch (e) {
+        errEl.textContent = friendlyError(e.code);
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Create account';
+      }
+    });
+
+    // Forgot password
+    document.getElementById('forgot-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      if (!email) { toast('Enter your email first.', 'error'); return; }
+      try {
+        await resetPassword(email);
+        toast('Reset Link sent!', 'success');
+      } catch {
+        toast('Could not send reset email.', 'error');
+      }
+    });
+
+    // Enter key support
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const loginActive = document.getElementById('panel-login').classList.contains('active');
+      if (loginActive) document.getElementById('login-btn').click();
+      else document.getElementById('signup-btn').click();
+    });
+
+    function friendlyError(code) {
+      const map = {
+        'auth/user-not-found':     'No account with that email.',
+        'auth/wrong-password':     'Incorrect password.',
+        'auth/email-already-in-use': 'That email is already in use.',
+        'auth/invalid-email':      'Invalid email address.',
+        'auth/too-many-requests':  'Too many attempts. Try again later.',
+      };
+      return map[code] || 'Something went wrong. Please try again.';
+    }
+
+    document.getElementById('github-btn').addEventListener('click', async () => {
+      try {
+        await loginWithGitHub();
+        window.location.href = 'dashboard.html';
+      } catch (e) {
+        console.error(e);
+        toast('GitHub sign-in failed.', 'error');
+      }
+    });
+  </script>
+</body>
+</html>

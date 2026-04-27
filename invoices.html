@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CorpFlow - Invoices</title>
+  <link rel="stylesheet" href="shared.css">
+  <link rel="icon" href="NEWCorpFlowLogo.png">
+  <style>
+    .toolbar { display:flex;gap:var(--s-3);align-items:center;margin-bottom:var(--s-5);flex-wrap:wrap; }
+    .toolbar .input { max-width:240px; }
+    .table-wrap { background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-lg);overflow-x:auto;-webkit-overflow-scrolling:touch; }
+    .row-actions { display:flex;gap:var(--s-2); }
+    .icon-btn { background:none;border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 8px;color:var(--text-muted);cursor:pointer;font-size:12px;transition:all 0.15s; }
+    .icon-btn:hover { background:var(--bg-4);color:var(--text); }
+    .icon-btn.del:hover { border-color:rgba(255,92,92,0.3);color:var(--red); }
+    .summary-bar { display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-4);margin-bottom:var(--s-6); }
+    @media (max-width:640px){.summary-bar{grid-template-columns:1fr;}}
+    .form-row { display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4);margin-bottom:var(--s-4); }
+    @media (max-width:520px){.form-row{grid-template-columns:1fr;}}
+    .form-group { display:flex;flex-direction:column;gap:var(--s-2); }
+    .form-full { margin-bottom:var(--s-4); }
+    .line-items { width:100%;border-collapse:collapse;margin-bottom:var(--s-4); }
+    .line-items th { font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);padding:8px;border-bottom:1px solid var(--border);text-align:left; }
+    .line-items td { padding:6px 4px; }
+    .line-items .input { padding:6px 10px; }
+    .total-row { display:flex;justify-content:space-between;align-items:center;padding:var(--s-3) 0;border-top:1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title">Invoices</div>
+        <div class="page-subtitle">Create, send, and track invoices.</div>
+      </div>
+
+      <div class="summary-bar">
+        <div class="stat-card"><div class="stat-label">Total Billed</div><div class="stat-value" id="s-billed">—</div></div>
+        <div class="stat-card"><div class="stat-label">Paid</div><div class="stat-value" id="s-paid" style="color:var(--green)">—</div></div>
+        <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" id="s-pending" style="color:var(--amber)">—</div></div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" type="search" id="inv-search" placeholder="Search invoices…">
+        <select class="input" id="inv-filter" style="max-width:160px">
+          <option value="">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+          <option value="overdue">Overdue</option>
+        </select>
+        <button class="btn btn-primary" id="add-inv-btn">+ New Invoice</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="cf-table" style="min-width:580px">
+          <thead>
+            <tr><th>#</th><th>Client</th><th>Issue Date</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="inv-tbody"><tr><td colspan="7"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Invoice Modal -->
+  <div class="modal-backdrop" id="inv-modal">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-header">
+        <span style="font-family:var(--font-display);font-weight:700;font-size:18px" id="inv-modal-title">New Invoice</span>
+        <button class="modal-close" data-close="inv-modal">✕</button>
+      </div>
+      <input type="hidden" id="inv-id">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Invoice # *</label><input class="input" id="inv-num" placeholder="INV-001"></div>
+        <div class="form-group"><label class="form-label">Client</label><select class="input" id="inv-client"><option value="">— Select —</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Issue Date</label><input class="input" id="inv-issue" type="date"></div>
+        <div class="form-group"><label class="form-label">Due Date</label><input class="input" id="inv-due" type="date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="input" id="inv-status">
+            <option value="draft">Draft</option><option value="pending">Pending</option>
+            <option value="paid">Paid</option><option value="overdue">Overdue</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Amount ($) *</label><input class="input" id="inv-amount" type="number" placeholder="1500"></div>
+      </div>
+      <div class="form-full"><label class="form-label">Notes</label><input class="input" id="inv-notes" placeholder="Payment terms, bank details…"></div>
+      <div style="display:flex;gap:var(--s-3);justify-content:flex-end;margin-top:var(--s-6)">
+        <button class="btn btn-ghost" data-close="inv-modal">Cancel</button>
+        <button class="btn btn-primary" id="save-inv-btn">Save Invoice</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { requireAuth, getInvoices, addInvoice, updateInvoice, deleteInvoice, getClients } from './api.js';
+    import { renderSidebar } from './app-registry.js';
+    import { toast, confirm, openModal, closeModal, statusBadge, formatCurrency, emptyState, filterList, setLoading } from './ui.js';
+
+    const user = await requireAuth();
+    renderSidebar('invoices');
+
+    let invoices = [], clients = [];
+
+    async function load() {
+      [invoices, clients] = await Promise.all([getInvoices(user.uid), getClients(user.uid)]);
+      render(invoices);
+      populateClients();
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const billed  = invoices.reduce((s,i) => s+(i.amount||0), 0);
+      const paid    = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+(i.amount||0),0);
+      const pending = invoices.filter(i=>i.status==='pending').reduce((s,i)=>s+(i.amount||0),0);
+      document.getElementById('s-billed').textContent  = formatCurrency(billed);
+      document.getElementById('s-paid').textContent    = formatCurrency(paid);
+      document.getElementById('s-pending').textContent = formatCurrency(pending);
+    }
+
+    function render(data) {
+      const tbody = document.getElementById('inv-tbody');
+      if (!data.length) { tbody.innerHTML = `<tr><td colspan="7">${emptyState('◎','No invoices yet.')}</td></tr>`; return; }
+      tbody.innerHTML = data.map(i => `
+        <tr>
+          <td><strong>${i.invoiceNum||i.id.slice(0,6)}</strong></td>
+          <td>${clients.find(c=>c.id===i.clientId)?.name||'—'}</td>
+          <td>${i.issueDate||'—'}</td>
+          <td>${i.dueDate||'—'}</td>
+          <td><strong>${formatCurrency(i.amount)}</strong></td>
+          <td>${statusBadge(i.status||'draft')}</td>
+          <td><div class="row-actions">
+            <button class="icon-btn" onclick="editInv('${i.id}')">Edit</button>
+            <button class="icon-btn del" onclick="removeInv('${i.id}')">✕</button>
+          </div></td>
+        </tr>`).join('');
+    }
+
+    function populateClients() {
+      document.getElementById('inv-client').innerHTML =
+        `<option value="">— Select client —</option>` +
+        clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    document.getElementById('inv-search').addEventListener('input', e => {
+      render(filterList(invoices, e.target.value, ['invoiceNum']));
+    });
+    document.getElementById('inv-filter').addEventListener('change', e => {
+      render(invoices.filter(i => !e.target.value || i.status === e.target.value));
+    });
+
+    document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeModal(b.dataset.close)));
+    document.querySelectorAll('.modal-backdrop').forEach(m => m.addEventListener('click', e => { if(e.target===m) closeModal(m.id); }));
+
+    document.getElementById('add-inv-btn').addEventListener('click', () => {
+      ['inv-num','inv-issue','inv-due','inv-amount','inv-notes'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('inv-id').value = '';
+      document.getElementById('inv-status').value = 'draft';
+      document.getElementById('inv-modal-title').textContent = 'New Invoice';
+      // Auto-generate invoice number
+      document.getElementById('inv-num').value = `INV-${String(invoices.length+1).padStart(3,'0')}`;
+      // Default dates
+      const today = new Date(); const due = new Date(); due.setDate(due.getDate()+30);
+      document.getElementById('inv-issue').value = today.toISOString().split('T')[0];
+      document.getElementById('inv-due').value   = due.toISOString().split('T')[0];
+      openModal('inv-modal');
+    });
+
+    document.getElementById('save-inv-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('save-inv-btn');
+      const num = document.getElementById('inv-num').value.trim();
+      const amt = parseFloat(document.getElementById('inv-amount').value);
+      if (!num)      { toast('Invoice number required.','error'); return; }
+      if (isNaN(amt)){ toast('Amount required.','error'); return; }
+      setLoading(btn, true);
+      const data = {
+        invoiceNum: num, clientId: document.getElementById('inv-client').value,
+        issueDate: document.getElementById('inv-issue').value,
+        dueDate:   document.getElementById('inv-due').value,
+        status:    document.getElementById('inv-status').value,
+        amount: amt, notes: document.getElementById('inv-notes').value.trim(),
+      };
+      try {
+        const id = document.getElementById('inv-id').value;
+        if (id) { await updateInvoice(user.uid, id, data); toast('Invoice updated','success'); }
+        else     { await addInvoice(user.uid, data);        toast('Invoice created','success'); }
+        closeModal('inv-modal'); await load();
+      } catch { toast('Failed to save invoice.','error'); }
+      finally { setLoading(btn, false, 'Save Invoice'); }
+    });
+
+    window.editInv = (id) => {
+      const i = invoices.find(i=>i.id===id); if(!i) return;
+      document.getElementById('inv-id').value     = id;
+      document.getElementById('inv-num').value    = i.invoiceNum||'';
+      document.getElementById('inv-client').value = i.clientId||'';
+      document.getElementById('inv-issue').value  = i.issueDate||'';
+      document.getElementById('inv-due').value    = i.dueDate||'';
+      document.getElementById('inv-status').value = i.status||'draft';
+      document.getElementById('inv-amount').value = i.amount||'';
+      document.getElementById('inv-notes').value  = i.notes||'';
+      document.getElementById('inv-modal-title').textContent = 'Edit Invoice';
+      openModal('inv-modal');
+    };
+
+    window.removeInv = async (id) => {
+      if (!(await confirm('Delete this invoice?'))) return;
+      await deleteInvoice(user.uid, id); toast('Invoice deleted','info'); await load();
+    };
+
+    // Auto-open if URL param
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('new') === 'invoice') setTimeout(() => document.getElementById('add-inv-btn').click(), 300);
+
+    await load();
+  </script>
+</body>
+</html>

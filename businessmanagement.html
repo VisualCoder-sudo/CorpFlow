@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CorpFlow Dashboard</title>
+  <link rel="stylesheet" href="shared.css">
+  <link rel="icon" href="NEWCorpFlowLogo.png">
+  <style>
+    .tab-bar {
+      display: flex; gap: var(--s-1);
+      margin-bottom: var(--s-8);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-muted);
+      background: none; border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer; transition: all 0.18s;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .toolbar {
+      display: flex; gap: var(--s-3); align-items: center;
+      margin-bottom: var(--s-5); flex-wrap: wrap;
+    }
+    .toolbar .input { max-width: 240px; }
+
+    .table-wrap {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .row-actions {
+      display: flex; gap: var(--s-2);
+    }
+    .icon-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: var(--r-sm); padding: 4px 8px;
+      color: var(--text-muted); cursor: pointer; font-size: 12px;
+      transition: all 0.15s;
+    }
+    .icon-btn:hover { background: var(--bg-4); color: var(--text); }
+    .icon-btn.del:hover { border-color: rgba(255,92,92,0.3); color: var(--red); }
+
+    .kanban {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--s-4);
+    }
+    @media (max-width: 760px) { .kanban { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .kanban { grid-template-columns: 1fr; } }
+
+    .kanban-col {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: var(--s-4);
+      min-height: 200px;
+    }
+    .kanban-col-header {
+      display: flex; justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--s-4);
+    }
+    .kanban-col-title {
+      font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+    .kanban-count {
+      background: var(--bg-4); border-radius: 99px;
+      font-size: 11px; font-weight: 600;
+      padding: 1px 7px; color: var(--text-muted);
+    }
+    .kanban-card {
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: var(--s-3) var(--s-4);
+      margin-bottom: var(--s-3);
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .kanban-card:hover { border-color: var(--green-border); }
+    .kanban-card-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .kanban-card-meta  { font-size: 11px; color: var(--text-muted); }
+
+    .form-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4);
+      margin-bottom: var(--s-4);
+    }
+    @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: var(--s-2); }
+    .form-full { margin-bottom: var(--s-4); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title">Business Management</div>
+        <div class="page-subtitle">Manage clients, projects, tasks, and employees.</div>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="clients">Clients</button>
+        <button class="tab-btn" data-tab="projects">Projects</button>
+        <button class="tab-btn" data-tab="tasks">Tasks</button>
+        <button class="tab-btn" data-tab="employees">Employees</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-clients">
+        <div class="toolbar">
+          <input class="input" type="search" id="client-search" placeholder="Search clients…">
+          <select class="input" id="client-filter" style="max-width:160px">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <button class="btn btn-primary" id="add-client-btn">+ New Client</button>
+        </div>
+        <div class="table-wrap">
+          <table class="cf-table" style="min-width:600px">
+            <thead>
+              <tr>
+                <th>Name</th><th>Company</th><th>Email</th><th>Phone</th>
+                <th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="clients-tbody"><tr><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-projects">
+        <div class="toolbar">
+          <input class="input" type="search" id="project-search" placeholder="Search projects…">
+          <select class="input" id="project-filter" style="max-width:160px">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+          </select>
+          <button class="btn btn-primary" id="add-project-btn">+ New Project</button>
+        </div>
+        <div class="table-wrap">
+          <table class="cf-table" style="min-width:600px">
+            <thead>
+              <tr><th>Project</th><th>Client</th><th>Status</th><th>Budget</th><th>Due Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="projects-tbody"><tr><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-tasks">
+        <div class="toolbar">
+          <input class="input" type="search" id="task-search" placeholder="Search tasks…">
+          <button class="btn btn-primary" id="add-task-btn">+ New Task</button>
+        </div>
+        <div class="kanban" id="kanban-board">
+          <div class="kanban-col" data-status="pending">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">To Do</span>
+              <span class="kanban-count" id="count-pending">0</span>
+            </div>
+            <div id="col-pending"></div>
+          </div>
+          <div class="kanban-col" data-status="in-progress">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title" style="color:var(--blue)">In Progress</span>
+              <span class="kanban-count" id="count-in-progress">0</span>
+            </div>
+            <div id="col-in-progress"></div>
+          </div>
+          <div class="kanban-col" data-status="review">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title" style="color:var(--amber)">Review</span>
+              <span class="kanban-count" id="count-review">0</span>
+            </div>
+            <div id="col-review"></div>
+          </div>
+          <div class="kanban-col" data-status="done">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title" style="color:var(--green)">Done</span>
+              <span class="kanban-count" id="count-done">0</span>
+            </div>
+            <div id="col-done"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-employees">
+        <div class="toolbar">
+          <input class="input" type="search" id="employee-search" placeholder="Search employees…">
+          <select class="input" id="employee-filter" style="max-width:160px">
+            <option value="">All departments</option>
+            <option value="engineering">Engineering</option>
+            <option value="sales">Sales</option>
+            <option value="marketing">Marketing</option>
+            <option value="operations">Operations</option>
+            <option value="hr">HR</option>
+          </select>
+          <button class="btn btn-primary" id="add-employee-btn">+ New Employee</button>
+        </div>
+        <div class="table-wrap">
+          <table class="cf-table" style="min-width:600px">
+            <thead>
+              <tr><th>Name</th><th>Role</th><th>Department</th><th>Email</th><th>Status</th><th>Salary</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="employees-tbody"><tr><td colspan="7"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="client-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span style="font-family:var(--font-display);font-weight:700;font-size:18px" id="client-modal-title">New Client</span>
+        <button class="modal-close" data-close="client-modal">✕</button>
+      </div>
+      <input type="hidden" id="client-id">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full name *</label><input class="input" id="c-name" placeholder="Jane Smith"></div>
+        <div class="form-group"><label class="form-label">Company</label><input class="input" id="c-company" placeholder="Company Name"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Email</label><input class="input" id="c-email" type="email" placeholder="Name@Provider.com"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input class="input" id="c-phone" placeholder="+1 555 000 0000"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="input" id="c-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Industry</label><input class="input" id="c-industry" placeholder="Technology"></div>
+      </div>
+      <div class="form-full"><label class="form-label">Notes</label><input class="input" id="c-notes" placeholder="Optional notes…"></div>
+      <div style="display:flex;gap:var(--s-3);justify-content:flex-end;margin-top:var(--s-6)">
+        <button class="btn btn-ghost" data-close="client-modal">Cancel</button>
+        <button class="btn btn-primary" id="save-client-btn">Save Client</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="project-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span style="font-family:var(--font-display);font-weight:700;font-size:18px" id="project-modal-title">New Project</span>
+        <button class="modal-close" data-close="project-modal">✕</button>
+      </div>
+      <input type="hidden" id="project-id">
+      <div class="form-full"><label class="form-label">Project name *</label><input class="input" id="p-name" placeholder="Project Name"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Client</label><select class="input" id="p-client"><option value="">— Select client —</option></select></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="input" id="p-status">
+            <option value="pending">Pending</option><option value="active">Active</option>
+            <option value="completed">Completed</option><option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Budget ($)</label><input class="input" id="p-budget" type="number" placeholder="5000"></div>
+        <div class="form-group"><label class="form-label">Due date</label><input class="input" id="p-due" type="date"></div>
+      </div>
+      <div class="form-full"><label class="form-label">Description</label><input class="input" id="p-desc" placeholder="Project overview…"></div>
+      <div style="display:flex;gap:var(--s-3);justify-content:flex-end;margin-top:var(--s-6)">
+        <button class="btn btn-ghost" data-close="project-modal">Cancel</button>
+        <button class="btn btn-primary" id="save-project-btn">Save Project</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="task-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span style="font-family:var(--font-display);font-weight:700;font-size:18px" id="task-modal-title">New Task</span>
+        <button class="modal-close" data-close="task-modal">✕</button>
+      </div>
+      <input type="hidden" id="task-id">
+      <div class="form-full"><label class="form-label">Task title *</label><input class="input" id="t-title" placeholder="Task Name"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Project</label><select class="input" id="t-project"><option value="">- Select project -</option></select></div>
+        <div class="form-group"><label class="form-label">Assigned to</label><input class="input" id="t-assignee" placeholder="Name or email"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="input" id="t-status">
+            <option value="pending">To Do</option><option value="in-progress">In Progress</option>
+            <option value="review">Review</option><option value="done">Done</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Priority</label>
+          <select class="input" id="t-priority">
+            <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-full"><label class="form-label">Due date</label><input class="input" id="t-due" type="date"></div>
+      <div style="display:flex;gap:var(--s-3);justify-content:flex-end;margin-top:var(--s-6)">
+        <button class="btn btn-ghost" data-close="task-modal">Cancel</button>
+        <button class="btn btn-primary" id="save-task-btn">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="employee-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span style="font-family:var(--font-display);font-weight:700;font-size:18px" id="employee-modal-title">New Employee</span>
+        <button class="modal-close" data-close="employee-modal">✕</button>
+      </div>
+      <input type="hidden" id="employee-id">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full name *</label><input class="input" id="e-name" placeholder="Jhon Smith"></div>
+        <div class="form-group"><label class="form-label">Role</label><input class="input" id="e-role" placeholder="Mechanic"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Department</label>
+          <select class="input" id="e-dept">
+            <option value="engineering">Engineering</option><option value="sales">Sales</option>
+            <option value="marketing">Marketing</option><option value="operations">Operations</option><option value="hr">HR</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="input" id="e-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Email</label><input class="input" id="e-email" type="email" placeholder="Email@company.com"></div>
+        <div class="form-group"><label class="form-label">Salary ($) (Per Hour)</label><input class="input" id="e-salary" type="number" placeholder="75000"></div>
+      </div>
+      <div style="display:flex;gap:var(--s-3);justify-content:flex-end;margin-top:var(--s-6)">
+        <button class="btn btn-ghost" data-close="employee-modal">Cancel</button>
+        <button class="btn btn-primary" id="save-employee-btn">Save Employee</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="businessmanagementJS.js"></script>
+</body>
+</html>

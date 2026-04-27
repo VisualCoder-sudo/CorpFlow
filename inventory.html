@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CorpFlow Dashboard</title>
+    <link rel="icon" href="NEWCorpFlowLogo.png" />
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+      .toolbar {
+        display: flex;
+        gap: var(--s-3);
+        align-items: center;
+        margin-bottom: var(--s-5);
+        flex-wrap: wrap;
+      }
+      .toolbar .input {
+        max-width: 240px;
+      }
+      .table-wrap {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .row-actions {
+        display: flex;
+        gap: var(--s-2);
+      }
+      .icon-btn {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--r-sm);
+        padding: 4px 8px;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.15s;
+      }
+      .icon-btn:hover {
+        background: var(--bg-4);
+        color: var(--text);
+      }
+      .icon-btn.del:hover {
+        border-color: rgba(255, 92, 92, 0.3);
+        color: var(--red);
+      }
+      .summary-bar {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--s-4);
+        margin-bottom: var(--s-6);
+      }
+      @media (max-width: 640px) {
+        .summary-bar {
+          grid-template-columns: 1fr;
+        }
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--s-4);
+        margin-bottom: var(--s-4);
+      }
+      @media (max-width: 520px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--s-2);
+      }
+      .form-full {
+        margin-bottom: var(--s-4);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <nav class="sidebar" id="sidebar"></nav>
+      <main class="main-content">
+        <div class="page-header">
+          <div class="page-title">Inventory</div>
+          <div class="page-subtitle">
+            Track and categorize business inventory.
+          </div>
+        </div>
+
+        <div class="summary-bar">
+          <div class="stat-card">
+            <div class="stat-label">Total Inventory Value</div>
+            <div class="stat-value" id="s-total" style="color: lightcoral">
+              —
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">This Month</div>
+            <div class="stat-value" id="s-month">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Entries</div>
+            <div class="stat-value" id="s-count">—</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <input
+            class="input"
+            type="search"
+            id="exp-search"
+            placeholder="Search inventory…"
+          />
+          <select class="input" id="exp-cat" style="max-width: 180px">
+            <option value="" selected>All categories</option>
+            <option value="tools-equipment">Tools & Equipment</option>
+            <option value="auto-parts">Auto Parts</option>
+            <option value="shop-supplies">Shop Supplies</option>
+            <option value="fluids-oils">Fluids & Oils</option>
+            <option value="disposal-fees">Disposal & Recycling Fees</option>
+            <option value="facility-maintenance">Facility Maintenance</option>
+            <option value="shop-utilities">Shop Utilities</option>
+            <option value="other">Other</option>
+          </select>
+          <button class="btn btn-primary" id="add-exp-btn">
+            + Add Inventory Item
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="cf-table" style="min-width:560px">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Seller</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="exp-tbody">
+              <tr>
+                <td colspan="6"><div class="spinner"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <!-- Inventory Modal -->
+    <div class="modal-backdrop" id="exp-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <span
+            style="
+              font-family: var(--font-display);
+              font-weight: 700;
+              font-size: 18px;
+            "
+            id="exp-modal-title"
+            >New Inventory Item</span
+          >
+          <button class="modal-close" data-close="exp-modal">✕</button>
+        </div>
+        <input type="hidden" id="exp-id" />
+        <div class="form-full">
+          <label class="form-label">Name *</label
+          ><input class="input" id="exp-desc" placeholder="Item" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Amount ($) *</label
+            ><input
+              class="input"
+              id="exp-amount"
+              type="number"
+              placeholder="0.00"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date *</label
+            ><input class="input" id="exp-date" type="date" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="input" id="exp-category">
+              <option value="tools-equipment">Tools & Equipment</option>
+              <option value="auto-parts">Auto Parts</option>
+              <option value="shop-supplies">Shop Supplies</option>
+              <option value="fluids-oils">Fluids & Oils</option>
+              <option value="disposal-fees">Disposal & Recycling Fees</option>
+              <option value="facility-maintenance">Facility Maintenance</option>
+              <option value="shop-utilities">Shop Utilities</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seller</label
+            ><input class="input" id="exp-vendor" placeholder="Seller name" />
+          </div>
+        </div>
+        <div class="form-full">
+          <label class="form-label">Notes</label
+          ><input class="input" id="exp-notes" placeholder="Optional…" />
+        </div>
+        <div
+          style="
+            display: flex;
+            gap: var(--s-3);
+            justify-content: flex-end;
+            margin-top: var(--s-6);
+          "
+        >
+          <button class="btn btn-ghost" data-close="exp-modal">Cancel</button>
+          <button class="btn btn-primary" id="save-exp-btn">
+            Save Inventory Item
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import {
+        requireAuth,
+        getInventory,
+        addInventory,
+        updateInventory,
+        deleteInventory,
+      } from "./api.js";
+      import { renderSidebar } from "./app-registry.js";
+      import {
+        toast,
+        confirm,
+        openModal,
+        closeModal,
+        formatCurrency,
+        emptyState,
+        filterList,
+        setLoading,
+      } from "./ui.js";
+
+      const user = await requireAuth();
+      renderSidebar("inventory");
+      document.getElementById("exp-cat").value = "";
+      let inventory = [];
+
+      async function load() {
+        inventory = await getInventory(user.uid);
+        render(inventory);
+        updateSummary();
+      }
+
+      function updateSummary() {
+        const total = inventory.reduce((s, e) => s + (e.amount || 0), 0);
+        const now = new Date();
+        const thisMonth = inventory
+          .filter((e) => {
+            const d = new Date(e.date);
+            return (
+              d.getMonth() === now.getMonth() &&
+              d.getFullYear() === now.getFullYear()
+            );
+          })
+          .reduce((s, e) => s + (e.amount || 0), 0);
+        document.getElementById("s-total").textContent = formatCurrency(total);
+        document.getElementById("s-month").textContent =
+          formatCurrency(thisMonth);
+        document.getElementById("s-count").textContent = inventory.length;
+      }
+
+      const CAT_COLORS = {
+        software: "badge-blue",
+        hardware: "badge-purple",
+        travel: "badge-amber",
+        marketing: "badge-green",
+        payroll: "badge-red",
+        office: "badge-blue",
+        other: "badge-blue",
+      };
+
+      function render(data) {
+        const tbody = document.getElementById("exp-tbody");
+        if (!data.length) {
+          tbody.innerHTML = `<tr><td colspan="6">${emptyState("◻", "No inventory items logged yet.")}</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = data
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .map(
+            (e) => `
+        <tr>
+          <td><strong>${e.description || "—"}</strong>${e.notes ? `<br><span style="font-size:11px;color:var(--text-muted)">${e.notes}</span>` : ""}</td>
+          <td><span class="badge ${CAT_COLORS[e.category] || "badge-blue"}">${e.category || "other"}</span></td>
+          <td>${e.date || "—"}</td>
+          <td><strong style="color:var(--red)">${formatCurrency(e.amount)}</strong></td>
+          <td>${e.vendor || "—"}</td>
+          <td><div class="row-actions">
+            <button class="icon-btn" onclick="editExp('${e.id}')">Edit</button>
+            <button class="icon-btn del" onclick="removeExp('${e.id}')">✕</button>
+          </div></td>
+        </tr>`,
+          )
+          .join("");
+      }
+
+      document.getElementById("exp-search").addEventListener("input", (e) => {
+        const cat = document.getElementById("exp-cat").value;
+        render(
+          filterList(inventory, e.target.value, [
+            "description",
+            "vendor",
+            "notes",
+          ]).filter((x) => !cat || x.category === cat),
+        );
+      });
+      document.getElementById("exp-cat").addEventListener("change", (e) => {
+        render(
+          filterList(inventory, document.getElementById("exp-search").value, [
+            "description",
+            "vendor",
+            "notes",
+          ]).filter((x) => !e.target.value || x.category === e.target.value),
+        );
+      });
+
+      document
+        .querySelectorAll("[data-close]")
+        .forEach((b) =>
+          b.addEventListener("click", () => closeModal(b.dataset.close)),
+        );
+      document.querySelectorAll(".modal-backdrop").forEach((m) =>
+        m.addEventListener("click", (e) => {
+          if (e.target === m) closeModal(m.id);
+        }),
+      );
+
+      document.getElementById("add-exp-btn").addEventListener("click", () => {
+        ["exp-desc", "exp-amount", "exp-vendor", "exp-notes"].forEach(
+          (id) => (document.getElementById(id).value = ""),
+        );
+        document.getElementById("exp-id").value = "";
+        document.getElementById("exp-date").value = new Date()
+          .toISOString()
+          .split("T")[0];
+        document.getElementById("exp-category").value = "shop-supplies";
+        document.getElementById("exp-modal-title").textContent =
+          "New Inventory Item";
+        openModal("exp-modal");
+      });
+
+      document
+        .getElementById("save-exp-btn")
+        .addEventListener("click", async () => {
+          const btn = document.getElementById("save-exp-btn");
+          const desc = document.getElementById("exp-desc").value.trim();
+          const amt = parseFloat(document.getElementById("exp-amount").value);
+          if (!desc) {
+            toast("Description required.", "error");
+            return;
+          }
+          if (isNaN(amt)) {
+            toast("Amount required.", "error");
+            return;
+          }
+          setLoading(btn, true);
+          const data = {
+            description: desc,
+            amount: amt,
+            date: document.getElementById("exp-date").value,
+            category: document.getElementById("exp-category").value,
+            vendor: document.getElementById("exp-vendor").value.trim(),
+            notes: document.getElementById("exp-notes").value.trim(),
+          };
+          try {
+            const id = document.getElementById("exp-id").value;
+            if (id) {
+              await updateInventory(user.uid, id, data);
+              toast("Inventory item updated", "success");
+            } else {
+              await addInventory(user.uid, data);
+              toast("Inventory item added", "success");
+            }
+            closeModal("exp-modal");
+            await load();
+          } catch {
+            toast("Failed to save.", "error");
+          } finally {
+            setLoading(btn, false, "Save Inventory Item");
+          }
+        });
+
+      window.editExp = (id) => {
+        const e = inventory.find((e) => e.id === id);
+        if (!e) return;
+        document.getElementById("exp-id").value = id;
+        document.getElementById("exp-desc").value = e.description || "";
+        document.getElementById("exp-amount").value = e.amount || "";
+        document.getElementById("exp-date").value = e.date || "";
+        document.getElementById("exp-category").value = e.category || "other";
+        document.getElementById("exp-vendor").value = e.vendor || "";
+        document.getElementById("exp-notes").value = e.notes || "";
+        document.getElementById("exp-modal-title").textContent =
+          "Edit Inventory Item";
+        openModal("exp-modal");
+      };
+
+      window.removeExp = async (id) => {
+        if (!(await confirm("Delete this inventory item?"))) return;
+        await deleteInventory(user.uid, id);
+        toast("Deleted", "info");
+        await load();
+      };
+
+      await load();
+    </script>
+  </body>
+</html>
